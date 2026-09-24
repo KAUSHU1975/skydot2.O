@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skydot — Your digital world, with a brain.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#08131b;
+    --bg-elev:#0c1b24;
+    --bg-elev-2:#10232e;
+    --glass:rgba(72,194,184,0.055);
+    --glass-strong:rgba(72,194,184,0.09);
+    --border:rgba(100,220,210,0.16);
+    --border-soft:rgba(100,220,210,0.09);
+    --sky:#72d6cf;
+    --violet:#8fb7ff;
+    --amber:#f0c56a;
+    --text:#edf8f7;
+    --muted:#9bb5b9;
+    --muted-2:#6f8b91;
+    --danger:#ff6b6b;
+    --good:#4ade80;
+    --radius:16px;
+    --radius-sm:10px;
+    --font-display:'Space Grotesk', sans-serif;
+    --font-body:'Inter', sans-serif;
+  }
+  [data-theme="light"]{
+    --bg:#eef8f7;
+    --bg-elev:#ffffff;
+    --bg-elev-2:#e7f3f2;
+    --glass:rgba(30,120,115,0.045);
+    --glass-strong:rgba(30,120,115,0.075);
+    --border:rgba(30,120,115,0.15);
+    --border-soft:rgba(30,120,115,0.08);
+    --text:#102326;
+    --muted:#587176;
+    --muted-2:#81979b;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-body);
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  #app{position:relative; width:100%; height:100vh;}
+
+  /* ---------- constellation backdrop ---------- */
+  .sky-field{position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.22;}
+  [data-theme="light"] .sky-field{opacity:.2;}
+
+  /* ---------- AUTH / LOGIN ---------- */
+  #auth{position:fixed;inset:0;z-index:120;display:none;align-items:center;justify-content:center;padding:20px;background:radial-gradient(ellipse at 50% 20%,#12343a 0%,#08131b 72%);}
+  #auth.on{display:flex;}
+  .auth-card{width:min(430px,92vw);background:rgba(16,35,46,.88);border:1px solid var(--border);border-radius:22px;padding:32px;box-shadow:0 20px 70px rgba(0,0,0,.25);backdrop-filter:blur(18px);}
+  .auth-brand{text-align:center;margin-bottom:24px;}
+  .auth-brand .orb{width:58px;height:58px;margin:0 auto 14px;animation:none;box-shadow:0 0 28px 4px rgba(114,214,207,.24);}
+  .auth-logo{font-family:var(--font-display);font-weight:700;letter-spacing:.14em;font-size:1.7rem;background:linear-gradient(90deg,#eafffb,var(--sky),var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .auth-sub{color:var(--muted);font-size:.84rem;margin-top:7px;}
+  .auth-card h1{font-family:var(--font-display);font-size:1.35rem;margin-bottom:6px;}
+  .auth-card .auth-note{color:var(--muted);font-size:.8rem;margin-bottom:18px;line-height:1.45;}
+  .auth-field{margin-bottom:12px;}
+  .auth-field label{display:block;color:var(--muted);font-size:.75rem;margin-bottom:6px;}
+  .auth-field input{width:100%;padding:12px 13px;border-radius:10px;border:1px solid var(--border);background:rgba(72,194,184,.045);color:var(--text);outline:none;font-family:var(--font-body);}
+  .auth-field input:focus{border-color:var(--sky);}
+  .auth-switch{text-align:center;color:var(--muted);font-size:.78rem;margin-top:14px;}
+  .auth-switch button{background:none;border:0;color:var(--sky);cursor:pointer;font:inherit;}
+  .auth-demo{margin-top:12px;text-align:center;font-size:.7rem;color:var(--muted-2);line-height:1.4;}
+
+  /* ---------- SPLASH ---------- */
+  #splash{
+    position:fixed; inset:0; z-index:100;
+    display:flex; align-items:center; justify-content:center; flex-direction:column;
+    background:radial-gradient(ellipse at 50% 30%, #12343a 0%, #08131b 68%);
+    transition:opacity .5s ease;
+  }
+  #splash.hide{opacity:0; pointer-events:none;}
+  .orb{
+    width:74px; height:74px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #cfe0ff, var(--sky) 40%, var(--violet) 100%);
+    box-shadow:0 0 28px 4px rgba(114,214,207,.24), 0 0 55px 10px rgba(143,183,255,.10);
+    animation:orbPulse 2.2s ease-in-out infinite;
+  }
+  @keyframes orbPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
+  .splash-logo{
+    font-family:var(--font-display); font-weight:700; font-size:2.1rem; letter-spacing:.14em;
+    margin-top:22px; opacity:0; animation:fadeUp .8s ease .4s forwards;
+    background:linear-gradient(90deg,#eafffb,var(--sky) 60%,var(--violet));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .splash-tag{
+    margin-top:8px; color:var(--muted); font-size:.85rem; letter-spacing:.02em;
+    opacity:0; animation:fadeUp .8s ease .8s forwards;
+  }
+  @keyframes fadeUp{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);}}
+  .skip-btn{
+    position:absolute; bottom:34px; right:34px; background:none; border:1px solid var(--border);
+    color:var(--muted); padding:8px 16px; border-radius:20px; font-size:.8rem; cursor:pointer;
+    font-family:var(--font-body); transition:.2s;
+  }
+  .skip-btn:hover{color:var(--text); border-color:var(--sky);}
+
+  /* ---------- ONBOARDING ---------- */
+  #onboard{
+    position:fixed; inset:0; z-index:90; display:none; align-items:center; justify-content:center;
+    background:radial-gradient(ellipse at 50% 20%, #12343a 0%, #08131b 72%);
+  }
+  .onboard-card{
+    width:min(420px,88vw); background:var(--glass-strong); border:1px solid var(--border);
+    border-radius:var(--radius); padding:34px 30px; text-align:center; backdrop-filter:blur(18px);
+  }
+  .onboard-card .orb{width:46px; height:46px; margin:0 auto 18px;}
+  .onboard-card h1{font-family:var(--font-display); font-size:1.3rem; margin-bottom:6px;}
+  .onboard-card p{color:var(--muted); font-size:.88rem; margin-bottom:22px;}
+  .onboard-card input{
+    width:100%; padding:13px 15px; border-radius:var(--radius-sm); border:1px solid var(--border);
+    background:var(--glass); color:var(--text); font-size:.95rem; font-family:var(--font-body); outline:none;
+  }
+  .onboard-card input:focus{border-color:var(--sky);}
+  .btn-primary{
+    margin-top:16px; width:100%; padding:13px; border:none; border-radius:var(--radius-sm); cursor:pointer;
+    background:linear-gradient(90deg,var(--sky),var(--violet)); color:#0a0c18; font-weight:600; font-size:.92rem;
+    font-family:var(--font-body); transition:transform .15s, box-shadow .15s;
+  }
+  .btn-primary:hover{transform:translateY(-1px); box-shadow:0 6px 22px rgba(110,168,254,.28);}
+  .onboard-skip{margin-top:14px; background:none; border:none; color:var(--muted-2); font-size:.8rem; cursor:pointer; text-decoration:underline;}
+
+  /* ---------- SHELL ---------- */
+  #shell{display:none; height:100%; position:relative; z-index:1;}
+  #shell.on{display:flex;}
+  .sidebar{
+    width:220px; flex-shrink:0; background:var(--bg-elev); border-right:1px solid var(--border-soft);
+    display:flex; flex-direction:column; padding:20px 14px;
+  }
+  .brand{display:flex; align-items:center; gap:10px; padding:0 8px 22px; }
+  .brand .orb{width:26px; height:26px; box-shadow:0 0 16px 2px rgba(110,168,254,.5);}
+  .brand span{font-family:var(--font-display); font-weight:700; letter-spacing:.08em; font-size:1.05rem;}
+  .nav-item{
+    display:flex; align-items:center; gap:11px; padding:10px 12px; border-radius:var(--radius-sm);
+    color:var(--muted); cursor:pointer; font-size:.87rem; font-weight:500; transition:.15s; margin-bottom:2px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .nav-item svg{width:17px; height:17px; flex-shrink:0;}
+  .nav-item:hover{background:var(--glass); color:var(--text);}
+  .nav-item.active{background:var(--glass-strong); color:var(--text); box-shadow:inset 2px 0 0 var(--sky);}
+  .sidebar-footer{margin-top:auto; padding:12px 8px 0;}
+  .plan-chip{
+    display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-radius:var(--radius-sm);
+    background:var(--glass); border:1px solid var(--border-soft); font-size:.76rem; color:var(--muted);
+  }
+  .plan-chip b{color:var(--amber); font-weight:600;}
+
+  .main{flex:1; display:flex; flex-direction:column; min-width:0;}
+  .topbar{
+    height:60px; flex-shrink:0; display:flex; align-items:center; gap:14px; padding:0 22px;
+    border-bottom:1px solid var(--border-soft); background:var(--bg-elev);
+  }
+  .search-box{
+    flex:1; max-width:420px; display:flex; align-items:center; gap:8px; background:var(--glass);
+    border:1px solid var(--border-soft); border-radius:20px; padding:8px 14px; color:var(--muted-2); font-size:.83rem;
+  }
+  .search-box svg{width:14px; height:14px; flex-shrink:0;}
+  .search-box input{background:none; border:none; outline:none; color:var(--text); font-size:.83rem; width:100%; font-family:var(--font-body);}
+  .topbar-icons{margin-left:auto; display:flex; align-items:center; gap:14px;}
+  .icon-btn{width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--glass); border:1px solid var(--border-soft); cursor:pointer; color:var(--muted); position:relative;}
+  .icon-btn svg{width:16px; height:16px;}
+  .avatar{width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,var(--sky),var(--violet)); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.78rem; color:#0a0c18; cursor:pointer;}
+
+  .content{flex:1; overflow-y:auto; padding:28px 30px 60px;}
+  .view{display:none;}
+  .view.active{display:block; animation:viewIn .28s ease;}
+  @keyframes viewIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+  /* ---------- HOME ---------- */
+  .hero h1{font-family:var(--font-display); font-size:1.9rem; margin-bottom:6px;}
+  .hero p{color:var(--muted); font-size:.95rem; margin-bottom:26px;}
+  .ask-box{
+    background:var(--glass-strong); border:1px solid var(--border); border-radius:var(--radius);
+    padding:16px 18px; display:flex; align-items:center; gap:12px; margin-bottom:22px;
+  }
+  .ask-box input{flex:1; background:none; border:none; outline:none; color:var(--text); font-size:.98rem; font-family:var(--font-body);}
+  .ask-box button{background:linear-gradient(90deg,var(--sky),var(--violet)); border:none; color:#0a0c18; width:38px; height:38px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .quick-row{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:30px;}
+  .quick-chip{
+    display:flex; align-items:center; gap:8px; padding:9px 15px; border-radius:20px; background:var(--glass);
+    border:1px solid var(--border-soft); color:var(--text); font-size:.82rem; cursor:pointer; transition:.15s;
+  }
+  .quick-chip:hover{border-color:var(--sky); background:var(--glass-strong);}
+  .quick-chip svg{width:14px; height:14px;}
+  .grid-2{display:grid; grid-template-columns:2fr 1fr; gap:20px;}
+  @media(max-width:920px){.grid-2{grid-template-columns:1fr;}}
+  .card{background:var(--glass); border:1px solid var(--border-soft); border-radius:var(--radius); padding:18px 20px;}
+  .card h3{font-family:var(--font-display); font-size:1rem; margin-bottom:14px; font-weight:600;}
+  .row-item{display:flex; align-items:center; gap:12px; padding:9px 0; border-bottom:1px solid var(--border-soft); font-size:.85rem;}
+  .row-item:last-child{border-bottom:none;}
+  .row-ic{width:32px; height:32px; border-radius:9px; background:var(--glass-strong); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .row-ic svg{width:15px; height:15px; color:var(--sky);}
+  .usage-card{margin-top:16px;}
+  .usage-line{display:flex; justify-content:space-between; font-size:.8rem; color:var(--muted); margin-bottom:6px;}
+  .usage-bar{height:6px; border-radius:4px; background:var(--glass-strong); overflow:hidden; margin-bottom:14px;}
+  .usage-fill{height:100%; background:linear-gradient(90deg,var(--sky),var(--violet)); border-radius:4px; transition:width .3s;}
+  .usage-fill.warn{background:linear-gradient(90deg,var(--amber),#ff8a4c);}
+
+  /* ---------- CHAT ---------- */
+  .chat-wrap{display:flex; flex-direction:column; height:100%;}
+  .chat-scroll{flex:1; overflow-y:auto; padding-right:6px; margin-bottom:14px;}
+  .msg{max-width:72%; margin-bottom:14px; padding:12px 15px; border-radius:14px; font-size:.9rem; line-height:1.5;}
+  .msg.user{margin-left:auto; background:linear-gradient(120deg,var(--sky),var(--violet)); color:#0a0c18; border-bottom-right-radius:4px;}
+  .msg.ai{background:var(--glass-strong); border:1px solid var(--border-soft); border-bottom-left-radius:4px; white-space:pre-wrap;}
+  .msg.sys{margin:0 auto 14px; background:none; color:var(--muted-2); font-size:.78rem; text-align:center; max-width:100%;}
+  .chat-input-row{display:flex; gap:10px; align-items:center; background:var(--glass-strong); border:1px solid var(--border); border-radius:var(--radius); padding:8px 8px 8px 18px;}
+  .chat-input-row input{flex:1; background:none; border:none; outline:none; color:var(--text); font-size:.92rem; font-family:var(--font-body);}
+  .round-btn{width:40px; height:40px; border-radius:50%; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .round-btn.send{background:linear-gradient(90deg,var(--sky),var(--violet)); color:#0a0c18;}
+  .round-btn.mic{background:var(--glass); border:1px solid var(--border-soft); color:var(--muted);}
+  .round-btn.mic.listening{background:var(--danger); color:#fff; animation:micPulse 1s infinite;}
+  @keyframes micPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,107,107,.5);}50%{box-shadow:0 0 0 10px rgba(255,107,107,0);}}
+  .space-tabs{display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;}
+  .space-tab{padding:7px 14px; border-radius:16px; background:var(--glass); border:1px solid var(--border-soft); font-size:.8rem; cursor:pointer; color:var(--muted);}
+  .space-tab.active{background:var(--glass-strong); color:var(--text); border-color:var(--sky);}
+
+  /* ---------- FILES ---------- */
+  .files-toolbar{display:flex; align-items:center; gap:12px; margin-bottom:20px; flex-wrap:wrap;}
+  .btn-outline{padding:9px 16px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--glass); color:var(--text); font-size:.83rem; cursor:pointer; display:flex; align-items:center; gap:7px;}
+  .btn-outline:hover{border-color:var(--sky);}
+  .files-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:14px;}
+  .file-card{background:var(--glass); border:1px solid var(--border-soft); border-radius:var(--radius-sm); padding:16px; position:relative;}
+  .file-ic{width:38px; height:38px; border-radius:10px; background:var(--glass-strong); display:flex; align-items:center; justify-content:center; margin-bottom:10px; color:var(--violet);}
+  .file-ic svg{width:18px; height:18px;}
+  .file-name{font-size:.84rem; font-weight:500; margin-bottom:3px; word-break:break-word;}
+  .file-meta{font-size:.72rem; color:var(--muted-2);}
+  .file-actions{display:flex; gap:6px; margin-top:12px;}
+  .mini-btn{background:var(--glass-strong); border:1px solid var(--border-soft); color:var(--muted); border-radius:7px; padding:5px 8px; font-size:.7rem; cursor:pointer;}
+  .mini-btn:hover{color:var(--text); border-color:var(--sky);}
+  .empty-state{text-align:center; padding:60px 20px; color:var(--muted-2);}
+  .empty-state svg{width:44px; height:44px; margin-bottom:14px; opacity:.5;}
+
+  /* ---------- SPACES ---------- */
+  .spaces-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:16px;}
+  .space-card{background:var(--glass); border:1px solid var(--border-soft); border-radius:var(--radius); padding:20px; cursor:pointer; transition:.15s;}
+  .space-card:hover{border-color:var(--sky); transform:translateY(-2px);}
+  .space-icon{width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.2rem; margin-bottom:14px;}
+  .space-card h4{font-family:var(--font-display); font-size:.98rem; margin-bottom:4px;}
+  .space-card p{font-size:.76rem; color:var(--muted-2);}
+  .space-card.new{border-style:dashed; display:flex; align-items:center; justify-content:center; flex-direction:column; color:var(--muted); min-height:140px;}
+
+  /* ---------- STUDIO ---------- */
+  .studio-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px;}
+  .action-card{background:var(--glass); border:1px solid var(--border-soft); border-radius:var(--radius); padding:20px; cursor:pointer;}
+  .action-card:hover{border-color:var(--violet);}
+  .action-card .ic{width:38px; height:38px; border-radius:10px; background:var(--glass-strong); display:flex; align-items:center; justify-content:center; margin-bottom:12px; color:var(--sky);}
+  .action-card h4{font-size:.92rem; margin-bottom:5px; font-family:var(--font-display);}
+  .action-card p{font-size:.76rem; color:var(--muted-2); line-height:1.4;}
+
+  /* ---------- VOICE ---------- */
+  .voice-view{display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:70vh; text-align:center;}
+  .big-orb{width:150px; height:150px; border-radius:50%; background:radial-gradient(circle at 35% 30%,#dfe9ff,var(--sky) 45%,var(--violet) 100%); box-shadow:0 0 60px 10px rgba(110,168,254,.35); margin-bottom:26px; transition:transform .2s;}
+  .big-orb.listening{animation:orbListen 1.1s ease-in-out infinite;}
+  .big-orb.speaking{animation:orbSpeak .5s ease-in-out infinite;}
+  @keyframes orbListen{0%,100%{transform:scale(1);}50%{transform:scale(1.15);}}
+  @keyframes orbSpeak{0%,100%{transform:scale(1) rotate(0deg);}50%{transform:scale(1.05) rotate(2deg);}}
+  .voice-status{color:var(--muted); font-size:.9rem; margin-bottom:22px; min-height:20px;}
+  .voice-transcript{max-width:520px; width:100%; max-height:220px; overflow-y:auto; background:var(--glass); border:1px solid var(--border-soft); border-radius:var(--radius); padding:16px; font-size:.85rem; color:var(--muted); text-align:left; margin-bottom:20px;}
+  .voice-controls{display:flex; gap:14px;}
+  .voice-language-hint{max-width:520px;margin:-10px auto 18px;color:var(--muted-2);font-size:.72rem;line-height:1.45;text-align:center;}
+
+  /* ---------- HISTORY ---------- */
+  .history-item{display:flex; gap:14px; padding:14px 0; border-bottom:1px solid var(--border-soft);}
+  .history-dot{width:8px; height:8px; border-radius:50%; background:var(--sky); margin-top:6px; flex-shrink:0;}
+  .history-time{font-size:.72rem; color:var(--muted-2); margin-top:2px;}
+
+  /* ---------- SETTINGS ---------- */
+  .settings-section{margin-bottom:26px;}
+  .settings-section h3{font-family:var(--font-display); font-size:.95rem; margin-bottom:12px; color:var(--muted);}
+  .settings-row{display:flex; align-items:center; justify-content:space-between; padding:13px 16px; background:var(--glass); border:1px solid var(--border-soft); border-radius:var(--radius-sm); margin-bottom:8px; font-size:.86rem;}
+  .toggle{width:42px; height:24px; border-radius:14px; background:var(--glass-strong); border:1px solid var(--border); position:relative; cursor:pointer; flex-shrink:0;}
+  .toggle::after{content:''; position:absolute; width:18px; height:18px; border-radius:50%; background:var(--muted); top:2px; left:2px; transition:.2s;}
+  .toggle.on{background:var(--sky); border-color:var(--sky);}
+  .toggle.on::after{background:#0a0c18; left:20px;}
+  .settings-row select, .settings-row input[type=text]{background:var(--glass-strong); border:1px solid var(--border-soft); color:var(--text); padding:6px 10px; border-radius:7px; font-size:.8rem; font-family:var(--font-body);}
+  .danger-btn{background:none; border:1px solid var(--danger); color:var(--danger); padding:8px 14px; border-radius:var(--radius-sm); font-size:.8rem; cursor:pointer;}
+
+  /* ---------- MODAL / PAYWALL ---------- */
+  .modal-overlay{position:fixed; inset:0; background:rgba(4,5,14,.72); backdrop-filter:blur(4px); z-index:60; display:none; align-items:center; justify-content:center; padding:20px;}
+  .modal-overlay.on{display:flex;}
+  .modal-box{width:min(440px,100%); background:var(--bg-elev-2); border:1px solid var(--border); border-radius:var(--radius); padding:30px; position:relative;}
+  .modal-close{position:absolute; top:14px; right:14px; background:none; border:none; color:var(--muted); cursor:pointer; width:28px; height:28px;}
+  .paywall-badge{display:inline-block; background:linear-gradient(90deg,var(--amber),#ff8a4c); color:#1a1200; font-size:.7rem; font-weight:700; padding:4px 10px; border-radius:12px; margin-bottom:14px;}
+  .modal-box h2{font-family:var(--font-display); font-size:1.3rem; margin-bottom:8px;}
+  .modal-box .price{font-size:1.6rem; font-weight:700; margin:14px 0 4px; color:var(--amber);}
+  .modal-box .price span{font-size:.85rem; color:var(--muted); font-weight:400;}
+  .benefit{display:flex; gap:10px; align-items:flex-start; font-size:.84rem; color:var(--muted); margin-bottom:8px;}
+  .benefit svg{width:14px; height:14px; color:var(--good); margin-top:2px; flex-shrink:0;}
+  .modal-actions{margin-top:20px; display:flex; flex-direction:column; gap:8px;}
+  .btn-ghost{background:none; border:none; color:var(--muted); font-size:.83rem; cursor:pointer; padding:8px;}
+  .modal-result{margin-top:16px; max-height:280px; overflow-y:auto; background:var(--glass); border:1px solid var(--border-soft); border-radius:var(--radius-sm); padding:14px; font-size:.85rem; white-space:pre-wrap; line-height:1.5; display:none;}
+  textarea.studio-input{width:100%; min-height:110px; background:var(--glass); border:1px solid var(--border-soft); border-radius:var(--radius-sm); padding:12px; color:var(--text); font-family:var(--font-body); font-size:.86rem; resize:vertical; outline:none;}
+  textarea.studio-input:focus{border-color:var(--sky);}
+
+  /* ---------- MOBILE ---------- */
+  @media(max-width:760px){
+    .sidebar{position:fixed; bottom:0; left:0; right:0; width:100%; height:64px; flex-direction:row; align-items:center; justify-content:space-around; padding:0 6px; border-right:none; border-top:1px solid var(--border-soft); z-index:40;}
+    .brand, .sidebar-footer{display:none;}
+    .nav-item{flex-direction:column; gap:3px; font-size:.6rem; padding:6px 4px; box-shadow:none !important; background:none !important; color:var(--muted-2);}
+    .nav-item.active{color:var(--sky);}
+    .main{padding-bottom:64px;}
+    .content{padding:20px 16px 40px;}
+    .msg{max-width:88%;}
+  }
+  ::-webkit-scrollbar{width:6px;}
+  ::-webkit-scrollbar-thumb{background:var(--border); border-radius:4px;}
+</style>
+</head>
+<body>
+<canvas class="sky-field" id="skyField"></canvas>
+
+<!-- LOGIN / SIGN UP -->
+<div id="auth">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="orb"></div>
+      <div class="auth-logo">SKYDOT</div>
+      <div class="auth-sub">Your digital world, with a brain.</div>
+    </div>
+    <h1 id="authTitle">Welcome back</h1>
+    <p class="auth-note" id="authNote">Sign in to access your AI, files, spaces and voice assistant.</p>
+    <div class="auth-field" id="authNameField" style="display:none;"><label>Your name</label><input id="authName" type="text" placeholder="e.g. Kaushal" maxlength="40" autocomplete="name"></div>
+    <div class="auth-field"><label>Email</label><input id="authEmail" type="email" placeholder="you@example.com" autocomplete="email"></div>
+    <div class="auth-field"><label>Password</label><input id="authPassword" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')submitAuth()"></div>
+    <button class="btn-primary" id="authSubmit" onclick="submitAuth()">Login</button>
+    <div class="auth-switch"><span id="authSwitchText">New to Skydot?</span> <button onclick="toggleAuthMode()" id="authSwitchBtn">Create account</button></div>
+    <div class="auth-demo">Demo UI only: real account security and password storage require a backend.</div>
+  </div>
+</div>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="orb"></div>
+  <div class="splash-logo">SKYDOT</div>
+  <div class="splash-tag">Your digital world, with a brain.</div>
+  <button class="skip-btn" onclick="skipSplash()">Skip</button>
+</div>
+
+<!-- ONBOARDING -->
+<div id="onboard">
+  <div class="onboard-card">
+    <div class="orb"></div>
+    <h1>Welcome to Skydot</h1>
+    <p>What should Sky call you?</p>
+    <input id="nameInput" type="text" placeholder="Your name" maxlength="24" autofocus>
+    <button class="btn-primary" onclick="finishOnboarding()">Continue</button>
+    <button class="onboard-skip" onclick="finishOnboarding(true)">Skip for now</button>
+  </div>
+</div>
+
+<div id="app">
+<div id="shell">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="brand"><div class="orb" style="width:26px;height:26px;box-shadow:0 0 16px 2px rgba(110,168,254,.5)"></div><span>SKYDOT</span></div>
+    <div class="nav-item active" data-view="home" onclick="go('home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Home</div>
+    <div class="nav-item" data-view="chat" onclick="go('chat')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.38 8.38 0 01-8.5 8.4H4l3-3.3a8.38 8.38 0 013.5-13.6 8.4 8.4 0 0110.5 8.5z"/></svg>AI Chat</div>
+    <div class="nav-item" data-view="files" onclick="go('files')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>My Files</div>
+    <div class="nav-item" data-view="spaces" onclick="go('spaces')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Spaces</div>
+    <div class="nav-item" data-view="studio" onclick="go('studio')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4z"/></svg>AI Studio</div>
+    <div class="nav-item" data-view="voice" onclick="go('voice')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v1a7 7 0 0014 0v-1M12 18v4"/></svg>Talk to Sky</div>
+    <div class="nav-item" data-view="history" onclick="go('history')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>History</div>
+    <div class="nav-item" data-view="settings" onclick="go('settings')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.6V21a2 2 0 01-4 0v-.1a1.7 1.7 0 00-1-1.6 1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.6-1H3a2 2 0 010-4h.1a1.7 1.7 0 001.6-1 1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.9.3H9a1.7 1.7 0 001-1.6V3a2 2 0 014 0v.1a1.7 1.7 0 001 1.6 1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.9V9a1.7 1.7 0 001.6 1H21a2 2 0 010 4h-.1a1.7 1.7 0 00-1.6 1z"/></svg>Settings</div>
+    <div class="sidebar-footer">
+      <div class="plan-chip"><span id="planLabel">Free plan</span><b id="planBadge"></b></div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input placeholder="Search files, spaces, chats..." id="globalSearch">
+      </div>
+      <div class="topbar-icons">
+        <div class="icon-btn" onclick="toggleTheme()" title="Toggle theme">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z"/></svg>
+        </div>
+        <div class="icon-btn" title="Notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>
+        </div>
+        <div class="avatar" id="avatarChip" onclick="go('settings')">S</div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- HOME -->
+      <div class="view active" id="view-home">
+        <div class="hero">
+          <h1 id="homeGreeting">Good day 👋</h1>
+          <p>What do you want to do today?</p>
+        </div>
+        <div class="ask-box">
+          <input id="homeAsk" placeholder="Ask Sky anything..." onkeydown="if(event.key==='Enter')homeAskSend()">
+          <button onclick="homeAskSend()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </div>
+        <div class="quick-row">
+          <div class="quick-chip" onclick="go('files')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v16m-8-8h16"/></svg>Upload File</div>
+          <div class="quick-chip" onclick="go('voice')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="12" rx="3"/></svg>Talk to Sky</div>
+          <div class="quick-chip" onclick="openStudioAction('summary')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Summarize</div>
+          <div class="quick-chip" onclick="openStudioAction('quiz')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l2 2"/></svg>Create Quiz</div>
+          <div class="quick-chip" onclick="go('spaces')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v16m8-8H4"/></svg>New Space</div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <h3>Recent activity</h3>
+            <div id="recentActivity"><div class="empty-state" style="padding:30px 10px;">No activity yet — upload a file or start a chat.</div></div>
+          </div>
+          <div>
+            <div class="card">
+              <h3>Recent Spaces</h3>
+              <div id="recentSpaces"></div>
+            </div>
+            <div class="card usage-card">
+              <h3>Usage this window</h3>
+              <div class="usage-line"><span>Free uploads</span><span id="uploadUsageLabel">0/4</span></div>
+              <div class="usage-bar"><div class="usage-fill" id="uploadUsageFill" style="width:0%"></div></div>
+              <div class="usage-line"><span>Voice commands</span><span id="voiceUsageLabel">0/4</span></div>
+              <div class="usage-bar"><div class="usage-fill" id="voiceUsageFill" style="width:0%"></div></div>
+              <button class="btn-outline" style="width:100%; justify-content:center;" onclick="openPaywall()">Upgrade to Premium</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHAT -->
+      <div class="view" id="view-chat">
+        <div class="space-tabs" id="chatSpaceTabs"></div>
+        <div class="chat-wrap" style="height:calc(100vh - 210px);">
+          <div class="chat-scroll" id="chatScroll">
+            <div class="msg sys">Ask Sky anything about your work, files or ideas.</div>
+          </div>
+          <div class="chat-input-row">
+            <input id="chatInput" placeholder="Message Sky..." onkeydown="if(event.key==='Enter')sendChat()">
+            <button class="round-btn mic" id="chatMicBtn" onclick="toggleChatMic()" title="Speak">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v1a7 7 0 0014 0v-1"/></svg>
+            </button>
+            <button class="round-btn send" onclick="sendChat()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- FILES -->
+      <div class="view" id="view-files">
+        <div class="hero"><h1>My Files</h1><p>Upload, organize and ask Sky about your files.</p></div>
+        <div class="files-toolbar">
+          <button class="btn-outline" onclick="document.getElementById('fileInput').click()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v16m-8-8h16"/></svg> Add files
+          </button>
+          <input type="file" id="fileInput" multiple style="display:none" onchange="handleUpload(event)">
+          <span style="font-size:.8rem; color:var(--muted);" id="filesQuotaNote"></span>
+        </div>
+        <div class="files-grid" id="filesGrid"></div>
+      </div>
+
+      <!-- SPACES -->
+      <div class="view" id="view-spaces">
+        <div class="hero"><h1>AI Spaces</h1><p>Chat, files and tools organized by project.</p></div>
+        <div class="spaces-grid" id="spacesGrid"></div>
+      </div>
+
+      <!-- STUDIO -->
+      <div class="view" id="view-studio">
+        <div class="hero"><h1>AI Studio</h1><p>Turn files or text into summaries, notes, quizzes and more.</p></div>
+        <div class="studio-grid">
+          <div class="action-card" onclick="openStudioAction('summary')"><div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg></div><h4>Summary</h4><p>Turn a PDF or notes into a clear summary.</p></div>
+          <div class="action-card" onclick="openStudioAction('questions')"><div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 015 .5c0 1.5-2 1.8-2 3.2M12 17h.01"/></svg></div><h4>Important Questions</h4><p>Generate exam-style questions from content.</p></div>
+          <div class="action-card" onclick="openStudioAction('quiz')"><div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4M2 12l4 4L22 4"/></svg></div><h4>MCQ Quiz</h4><p>Build a multiple-choice quiz to self-test.</p></div>
+          <div class="action-card" onclick="openStudioAction('notes')"><div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg></div><h4>Study Notes</h4><p>Combine multiple sources into clean notes.</p></div>
+          <div class="action-card" onclick="openStudioAction('doc')"><div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6"/></svg></div><h4>Structured Document</h4><p>Turn rough text into an organized document.</p></div>
+          <div class="action-card" onclick="openStudioAction('slides')"><div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8"/></svg></div><h4>Presentation Outline</h4><p>Draft a slide-by-slide outline from your text.</p></div>
+          <div class="action-card" onclick="openStudioAction('code')"><div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6l-6 6 6 6M16 6l6 6-6 6"/></svg></div><h4>Code Helper</h4><p>Explain, debug or improve a piece of code.</p></div>
+          <div class="action-card" onclick="openStudioAction('tags')"><div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.6 12.6l-7.2 7.2a2 2 0 01-2.8 0l-6.6-6.6a2 2 0 010-2.8L11.2 3H20v8.8z"/><circle cx="16" cy="8" r="1.2"/></svg></div><h4>Auto Tags</h4><p>Generate tags and categories for your files.</p></div>
+        </div>
+      </div>
+
+      <!-- VOICE -->
+      <div class="view" id="view-voice">
+        <div class="voice-view">
+          <div class="big-orb" id="bigOrb"></div>
+          <div class="voice-status" id="voiceStatus">Tap the mic and talk to Sky. Sky will answer in your language and show the reply below.</div>
+          <div class="voice-transcript" id="voiceTranscript" style="display:none;"></div>
+          <div class="voice-language-hint">Tip: choose <b>Auto / Same as reply</b> in Settings. For microphone recognition, Chrome may need the spoken language selected manually.</div>
+          <div class="voice-controls">
+            <button class="round-btn mic" id="voiceMicBtn" style="width:58px; height:58px;" onclick="toggleVoiceMic()">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v1a7 7 0 0014 0v-1M12 18v4"/></svg>
+            </button>
+            <button class="round-btn mic" style="width:58px; height:58px;" onclick="stopSpeaking()" title="Stop speaking">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- HISTORY -->
+      <div class="view" id="view-history">
+        <div class="hero"><h1>History</h1><p>Everything Sky has helped you make.</p></div>
+        <div id="historyList"><div class="empty-state">Nothing here yet.</div></div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="view" id="view-settings">
+        <div class="hero"><h1>Settings</h1><p>Manage your profile, voice and subscription.</p></div>
+
+        <div class="settings-section">
+          <h3>Profile</h3>
+          <div class="settings-row"><span>Display name</span><input type="text" id="settingsName" onchange="updateName(this.value)"></div>
+          <div class="settings-row"><span>Theme</span>
+            <div class="toggle" id="themeToggle" onclick="toggleTheme()"></div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Voice</h3>
+          <div class="settings-row"><span>Voice enabled</span><div class="toggle on" id="voiceEnabledToggle" onclick="toggleSetting('voiceEnabled')"></div></div>
+          <div class="settings-row"><span>Auto-speak responses</span><div class="toggle on" id="autoSpeakToggle" onclick="toggleSetting('autoSpeak')"></div></div>
+          <div class="settings-row"><span>Voice</span><select id="voiceSelect" onchange="state.voiceURI=this.value"></select></div>
+          <div class="settings-row"><span>Voice language</span><select id="langSelect" onchange="setLanguage(this.value)">
+            <option value="auto">Auto / Same as reply</option>
+            <option value="en-IN">English (India)</option><option value="en-US">English (US)</option>
+            <option value="hi-IN">Hindi</option><option value="gu-IN">Gujarati</option><option value="mr-IN">Marathi</option>
+            <option value="bn-IN">Bengali</option><option value="ta-IN">Tamil</option><option value="te-IN">Telugu</option><option value="kn-IN">Kannada</option>
+          </select></div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Notifications & Privacy</h3>
+          <div class="settings-row"><span>Push notifications</span><div class="toggle on" id="notifToggle" onclick="toggleSetting('notif')"></div></div>
+          <div class="settings-row"><span>Store voice recordings</span><div class="toggle" id="storeVoiceToggle" onclick="toggleSetting('storeVoice')"></div></div>
+          <div class="settings-row"><span>Data & file management</span><button class="btn-outline" onclick="clearFiles()">Clear all files</button></div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Subscription</h3>
+          <div class="settings-row"><span id="subStatusLabel">Free plan</span><button class="btn-outline" id="subActionBtn" onclick="openPaywall()">Upgrade</button></div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Account</h3>
+          <div class="settings-row"><span>Log out</span><button class="btn-outline" onclick="logout()">Log out</button></div>
+          <div class="settings-row"><span>Delete account & data</span><button class="danger-btn" onclick="deleteAccount()">Delete</button></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- PAYWALL MODAL -->
+<div class="modal-overlay" id="paywallModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('paywallModal')">✕</button>
+    <span class="paywall-badge">UNLOCK THE FULL SKY</span>
+    <h2>Skydot Premium</h2>
+    <div class="price">₹99 <span>/ 2 months</span></div>
+    <div id="paywallReason" style="font-size:.8rem; color:var(--muted); margin-bottom:16px;"></div>
+    <div class="benefit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Unlimited voice commands</div>
+    <div class="benefit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Unlimited file uploads</div>
+    <div class="benefit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>Advanced AI actions & priority access</div>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="startPayment()">Pay ₹99 & Upgrade</button>
+      <button class="btn-ghost" onclick="closeModal('paywallModal')">Continue with basic chat</button>
+    </div>
+  </div>
+</div>
+
+<!-- STUDIO MODAL -->
+<div class="modal-overlay" id="studioModal">
+  <div class="modal-box" style="width:min(560px,100%);">
+    <button class="modal-close" onclick="closeModal('studioModal')">✕</button>
+    <h2 id="studioTitle">AI Action</h2>
+    <p style="font-size:.82rem; color:var(--muted); margin:6px 0 14px;" id="studioDesc"></p>
+    <textarea class="studio-input" id="studioInput" placeholder="Paste text, or type your topic..."></textarea>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="runStudioAction()" id="studioRunBtn">Generate</button>
+    </div>
+    <div class="modal-result" id="studioResult"></div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   SKYDOT — interactive front-end prototype
+   -----------------------------------------------------------
+   This is a self-contained front-end prototype. It demonstrates the
+   visual product flow including login UI, onboarding, chat, voice,
+   files, spaces, studio actions, free quota + 8-hour cooldown and
+   the ₹99/2-month premium paywall UI. Real auth, storage, AI and
+   payment verification require a backend.
+
+   IMPORTANT — per the spec's own section 18 ("Quota Logic"):
+   real quota, auth, storage and payments MUST be enforced by a
+   backend. This file simulates that logic in memory (state
+   resets on reload) purely so the UX can be demoed end-to-end.
+   Wire it to a real API (Node/Express or FastAPI + Postgres, as
+   recommended in the spec) before shipping.
+   ========================================================= */
+
+const FREE_LIMIT = 4;
+const COOLDOWN_MS = 8 * 60 * 60 * 1000; // 8 hours
+
+const state = {
+  name: '',
+  email: '',
+  authenticated: false,
+  authMode: 'login',
+  theme: 'dark',
+  isPremium: false,
+  uploadsUsed: 0,
+  voiceUsed: 0,
+  uploadCooldownUntil: null,
+  voiceCooldownUntil: null,
+  files: [],
+  spaces: [
+    {id:'college', name:'College', icon:'🎓', color:'linear-gradient(135deg,#6ea8fe,#8b6fff)', files:[], chat:[]},
+    {id:'coding', name:'Coding', icon:'💻', color:'linear-gradient(135deg,#4ade80,#22c55e)', files:[], chat:[]},
+    {id:'business', name:'Business', icon:'📈', color:'linear-gradient(135deg,#f5b942,#ff8a4c)', files:[], chat:[]},
+    {id:'personal', name:'Personal', icon:'🌙', color:'linear-gradient(135deg,#b18cff,#6ea8fe)', files:[], chat:[]},
+  ],
+  activeSpace: 'college',
+  history: [],
+  voiceEnabled: true,
+  autoSpeak: true,
+  notif: true,
+  storeVoice: false,
+  voiceURI: null,
+  lang: localStorage.getItem('skydot_lang') || 'auto',
+  chatMessages: {}, // per space id
+};
+state.spaces.forEach(s => state.chatMessages[s.id] = []);
+
+let recognition = null;
+let recognizing = false;
+let recognizingTarget = null; // 'chat' | 'voice'
+
+// Demo session only. No password is stored in the browser.
+state.authenticated = localStorage.getItem('skydot_demo_session') === '1';
+state.name = localStorage.getItem('skydot_demo_name') || '';
+state.email = localStorage.getItem('skydot_demo_email') || '';
+
+/* ---------------- SPLASH / ONBOARD ---------------- */
+function skipSplash(){ document.getElementById('splash').classList.add('hide'); setTimeout(afterSplash, 480); }
+setTimeout(skipSplash, 2600);
+
+function afterSplash(){
+  document.getElementById('splash').style.display='none';
+  if(!state.authenticated){
+    document.getElementById('auth').classList.add('on');
+    document.getElementById('authEmail').focus();
+    return;
+  }
+  if(!state.name){
+    document.getElementById('onboard').style.display='flex';
+    document.getElementById('nameInput').focus();
+  } else {
+    startShell();
+  }
+}
+
+function toggleAuthMode(){
+  state.authMode = state.authMode==='login' ? 'signup' : 'login';
+  const signup = state.authMode==='signup';
+  document.getElementById('authTitle').textContent = signup ? 'Create your Skydot account' : 'Welcome back';
+  document.getElementById('authNote').textContent = signup ? 'Create an account to keep your Skydot workspace connected across sessions.' : 'Sign in to access your AI, files, spaces and voice assistant.';
+  document.getElementById('authSubmit').textContent = signup ? 'Create account' : 'Login';
+  document.getElementById('authSwitchText').textContent = signup ? 'Already have an account?' : 'New to Skydot?';
+  document.getElementById('authSwitchBtn').textContent = signup ? 'Login' : 'Create account';
+  document.getElementById('authNameField').style.display = signup ? 'block' : 'none';
+  document.getElementById('authName').required = signup;
+}
+
+function submitAuth(){
+  const email=document.getElementById('authEmail').value.trim();
+  const password=document.getElementById('authPassword').value;
+  const signup = state.authMode==='signup';
+  const enteredName = document.getElementById('authName').value.trim();
+  if(!email || !email.includes('@')){ toast('Please enter a valid email.'); return; }
+  if(password.length < 6){ toast('Password should be at least 6 characters.'); return; }
+  if(signup && enteredName.length < 2){ toast('Please enter your name.'); return; }
+  state.authenticated=true;
+  state.email=email;
+  if(signup){
+    state.name = enteredName;
+    localStorage.setItem('skydot_demo_name', state.name);
+  } else {
+    const savedEmail = localStorage.getItem('skydot_demo_email') || '';
+    if(savedEmail.toLowerCase() === email.toLowerCase()){
+      state.name = localStorage.getItem('skydot_demo_name') || '';
+    }
+  }
+  localStorage.setItem('skydot_demo_session','1');
+  localStorage.setItem('skydot_demo_email', email);
+  document.getElementById('auth').classList.remove('on');
+  if(!state.name){
+    document.getElementById('onboard').style.display='flex';
+    document.getElementById('nameInput').focus();
+  } else startShell();
+}
+function finishOnboarding(skip){
+  const v = document.getElementById('nameInput').value.trim();
+  if(!skip && v) state.name = v;
+  if(!state.name) state.name = 'Explorer';
+  localStorage.setItem('skydot_demo_name', state.name);
+  document.getElementById('onboard').style.display='none';
+  startShell();
+}
+function startShell(){
+  document.getElementById('shell').classList.add('on');
+  document.getElementById('settingsName').value = state.name;
+  const langSel = document.getElementById('langSelect'); if(langSel) langSel.value = state.lang;
+  document.getElementById('avatarChip').textContent = state.name.charAt(0).toUpperCase();
+  const h = new Date().getHours();
+  const greet = h<12?'Good morning':h<17?'Good afternoon':'Good evening';
+  document.getElementById('homeGreeting').textContent = `${greet}, ${state.name} 👋`;
+  renderSpaces(); renderFiles(); renderUsage(); renderChatTabs(); populateVoices();
+  drawSky();
+}
+
+/* ---------------- NAVIGATION ---------------- */
+function go(view){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.view===view));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+view).classList.add('active');
+}
+
+/* ---------------- THEME ---------------- */
+function toggleTheme(){
+  state.theme = state.theme==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme', state.theme);
+  document.getElementById('themeToggle').classList.toggle('on', state.theme==='light');
+}
+
+/* ---------------- QUOTA HELPERS ---------------- */
+function msLeft(until){ return until ? Math.max(0, until - Date.now()) : 0; }
+function fmtCooldown(ms){
+  const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000);
+  return `${h}h ${m}m`;
+}
+function uploadLocked(){ return !state.isPremium && (state.uploadsUsed >= FREE_LIMIT) && msLeft(state.uploadCooldownUntil) > 0; }
+function voiceLocked(){ return !state.isPremium && (state.voiceUsed >= FREE_LIMIT) && msLeft(state.voiceCooldownUntil) > 0; }
+
+function renderUsage(){
+  const uUsed = state.isPremium ? 0 : Math.min(state.uploadsUsed, FREE_LIMIT);
+  const vUsed = state.isPremium ? 0 : Math.min(state.voiceUsed, FREE_LIMIT);
+  document.getElementById('uploadUsageLabel').textContent = state.isPremium ? 'Unlimited' : `${uUsed}/${FREE_LIMIT}`;
+  document.getElementById('voiceUsageLabel').textContent = state.isPremium ? 'Unlimited' : `${vUsed}/${FREE_LIMIT}`;
+  const uFill = document.getElementById('uploadUsageFill');
+  const vFill = document.getElementById('voiceUsageFill');
+  uFill.style.width = state.isPremium ? '100%' : (uUsed/FREE_LIMIT*100)+'%';
+  vFill.style.width = state.isPremium ? '100%' : (vUsed/FREE_LIMIT*100)+'%';
+  uFill.classList.toggle('warn', !state.isPremium && uUsed>=FREE_LIMIT);
+  vFill.classList.toggle('warn', !state.isPremium && vUsed>=FREE_LIMIT);
+
+  document.getElementById('planLabel').textContent = state.isPremium ? 'Premium' : 'Free plan';
+  document.getElementById('planBadge').textContent = state.isPremium ? '✦' : '';
+  document.getElementById('subStatusLabel').textContent = state.isPremium ? 'Premium — renews automatically' : 'Free plan';
+  document.getElementById('subActionBtn').textContent = state.isPremium ? 'Manage' : 'Upgrade';
+
+  let note = '';
+  if(!state.isPremium && uploadLocked()) note = `Uploads locked — resets in ${fmtCooldown(msLeft(state.uploadCooldownUntil))}`;
+  document.getElementById('filesQuotaNote').textContent = note;
+}
+
+/* ---------------- PAYWALL ---------------- */
+function openPaywall(reason){
+  document.getElementById('paywallReason').textContent = reason || 'Your free limit for this feature has been used.';
+  document.getElementById('paywallModal').classList.add('on');
+}
+function closeModal(id){ document.getElementById(id).classList.remove('on'); }
+function startPayment(){
+  // Real payments must be created and verified by a backend.
+  // Do not mark a user as premium from browser-only JavaScript.
+  toast('Payment setup required: connect Razorpay/another gateway + backend verification.');
+}
+
+/* ---------------- FILES ---------------- */
+function handleUpload(e){
+  const incoming = Array.from(e.target.files);
+  e.target.value = '';
+  if(!incoming.length) return;
+
+  for(const f of incoming){
+    if(!state.isPremium){
+      if(uploadLocked()){
+        openPaywall(`Your ${FREE_LIMIT} free uploads are used. Resets in ${fmtCooldown(msLeft(state.uploadCooldownUntil))}.`);
+        return;
+      }
+      if(state.uploadsUsed >= FREE_LIMIT){
+        state.uploadCooldownUntil = Date.now() + COOLDOWN_MS;
+        openPaywall(`Your ${FREE_LIMIT} free uploads are used. Upgrade for unlimited uploads, or continue with text chat.`);
+        return;
+      }
+      state.uploadsUsed++;
+    }
+    const fileObj = {id:crypto.randomUUID(), name:f.name, size:f.size, type:f.type, raw:f, text:null};
+    state.files.push(fileObj);
+    state.spaces.find(s=>s.id===state.activeSpace).files.push(fileObj.id);
+    addHistory(`Uploaded "${f.name}"`);
+    if(!state.isPremium && state.uploadsUsed === FREE_LIMIT){
+      state.uploadCooldownUntil = Date.now() + COOLDOWN_MS;
+    }
+    if(f.type.startsWith('text/') || /\.(txt|md|csv|json)$/i.test(f.name)){
+      f.text().then(t => { fileObj.text = t.slice(0, 8000); });
+    }
+  }
+  renderFiles(); renderUsage();
+}
+function fileIconSvg(){
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6"/></svg>`;
+}
+function fmtSize(b){ if(b<1024) return b+' B'; if(b<1048576) return (b/1024).toFixed(1)+' KB'; return (b/1048576).toFixed(1)+' MB'; }
+function renderFiles(){
+  const grid = document.getElementById('filesGrid');
+  if(!state.files.length){ grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">${fileIconSvg()}<div>No files yet. Add your first file to get started.</div></div>`; return; }
+  grid.innerHTML = state.files.map(f => `
+    <div class="file-card">
+      <div class="file-ic">${fileIconSvg()}</div>
+      <div class="file-name">${escapeHtml(f.name)}</div>
+      <div class="file-meta">${fmtSize(f.size)}</div>
+      <div class="file-actions">
+        <button class="mini-btn" onclick="deleteFile('${f.id}')">Delete</button>
+        <button class="mini-btn" onclick="quickSummarize('${f.id}')">Summarize</button>
+      </div>
+    </div>`).join('');
+}
+function deleteFile(id){ state.files = state.files.filter(f=>f.id!==id); renderFiles(); }
+function clearFiles(){ state.files = []; renderFiles(); toast('All files cleared.'); }
+function quickSummarize(id){
+  const f = state.files.find(x=>x.id===id);
+  openStudioAction('summary');
+  document.getElementById('studioInput').value = f.text || `[File: ${f.name} — no readable text extracted in this prototype; paste content here]`;
+}
+
+/* ---------------- SPACES ---------------- */
+function renderSpaces(){
+  const grid = document.getElementById('spacesGrid');
+  grid.innerHTML = state.spaces.map(s => `
+    <div class="space-card" onclick="openSpace('${s.id}')">
+      <div class="space-icon" style="background:${s.color}">${s.icon}</div>
+      <h4>${s.name}</h4>
+      <p>${s.files.length} files · ${s.chat.length} messages</p>
+    </div>`).join('') + `<div class="space-card new" onclick="createSpace()">+ New Space</div>`;
+  const rs = document.getElementById('recentSpaces');
+  rs.innerHTML = state.spaces.slice(0,3).map(s=>`
+    <div class="row-item"><div class="row-ic">${s.icon}</div><div>${s.name}</div></div>`).join('');
+}
+function createSpace(){
+  const name = prompt('Name your new Space:');
+  if(!name) return;
+  const id = 'sp_'+Date.now();
+  state.spaces.push({id, name, icon:'✨', color:'linear-gradient(135deg,#6ea8fe,#b18cff)', files:[], chat:[]});
+  state.chatMessages[id] = [];
+  renderSpaces(); renderChatTabs();
+}
+function openSpace(id){ state.activeSpace = id; go('chat'); renderChatTabs(); renderChatMessages(); }
+function renderChatTabs(){
+  document.getElementById('chatSpaceTabs').innerHTML = state.spaces.map(s=>`
+    <div class="space-tab ${s.id===state.activeSpace?'active':''}" onclick="switchSpace('${s.id}')">${s.icon} ${s.name}</div>`).join('');
+}
+function switchSpace(id){ state.activeSpace = id; renderChatTabs(); renderChatMessages(); }
+function renderChatMessages(){
+  const scroll = document.getElementById('chatScroll');
+  const msgs = state.chatMessages[state.activeSpace] || [];
+  scroll.innerHTML = msgs.length ? msgs.map(m=>`<div class="msg ${m.role}">${escapeHtml(m.content)}</div>`).join('') :
+    `<div class="msg sys">Ask Sky anything in the ${state.spaces.find(s=>s.id===state.activeSpace).name} space.</div>`;
+  scroll.scrollTop = scroll.scrollHeight;
+}
+
+/* ---------------- HISTORY ---------------- */
+function addHistory(text){
+  state.history.unshift({text, time:new Date()});
+  const list = document.getElementById('historyList');
+  list.innerHTML = state.history.map(h=>`
+    <div class="history-item"><div class="history-dot"></div><div><div>${escapeHtml(h.text)}</div><div class="history-time">${h.time.toLocaleTimeString()}</div></div></div>`).join('');
+  const ra = document.getElementById('recentActivity');
+  ra.innerHTML = state.history.slice(0,5).map(h=>`
+    <div class="row-item"><div class="row-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg></div><div>${escapeHtml(h.text)}</div></div>`).join('');
+}
+
+/* ---------------- AI CALL (Vercel backend) ---------------- */
+function localSkyFallback(userText){
+  const t = userText.trim().toLowerCase();
+  if(/^(hi|hello|hey|hii|helo|namaste|નમસ્તે|હાય|नमस्ते)\b/i.test(t)){
+    const name = state.name ? ` ${state.name}` : '';
+    if(/[અ-હ]/.test(userText)) return `નમસ્તે${name}! 👋 હું Sky છું. તમે મને કંઈપણ પૂછો, હું તમારી સાથે ગુજરાતી માં વાત કરી શકું છું.`;
+    if(/[अ-ह]/.test(userText)) return `नमस्ते${name}! 👋 मैं Sky हूँ। आप मुझसे कुछ भी पूछ सकते हैं।`;
+    return `Hello${name}! 👋 I'm Sky. Ask me anything and I'll reply in the same language you use.`;
+  }
+  return null;
+}
+async function callSky(userText, historyForApi){
+  try{
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        message: userText,
+        history: historyForApi
+      })
+    });
+    const data = await response.json().catch(()=>({}));
+    if(!response.ok) throw new Error(data.error || `API error ${response.status}`);
+    const reply = String(data.reply || "").trim();
+    if(!reply) throw new Error("Empty AI response");
+    return reply;
+  }catch(err){
+    console.error("Sky AI error:", err);
+    const fallback = localSkyFallback(userText);
+    if(fallback) return fallback;
+    return "Sky is online, but the AI backend is not connected yet. Please add ANTHROPIC_API_KEY in Vercel → Settings → Environment Variables, then redeploy.";
+  }
+}
+
+/* ---------------- CHAT ---------------- */
+async function sendChat(){
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if(!text) return;
+  input.value='';
+  pushMessage('user', text);
+  addHistory(`Chat: "${text.slice(0,40)}"`);
+  const apiHistory = (state.chatMessages[state.activeSpace]||[]).filter(m=>m.role!=='sys').map(m=>({role:m.role==='ai'?'assistant':'user', content:m.content}));
+  const reply = await callSky(text, apiHistory);
+  pushMessage('ai', reply);
+  if(state.autoSpeak) speak(reply);
+}
+function pushMessage(role, content){
+  state.chatMessages[state.activeSpace].push({role, content});
+  renderChatMessages();
+}
+function homeAskSend(){
+  const v = document.getElementById('homeAsk').value.trim();
+  if(!v) return;
+  document.getElementById('homeAsk').value='';
+  go('chat');
+  document.getElementById('chatInput').value = v;
+  sendChat();
+}
+
+/* ---------------- VOICE (Web Speech API — native browser feature) ---------------- */
+function getRecognition(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR) return null;
+  const r = new SR();
+  // Browser speech recognition needs a language hint. Auto mode follows the browser language.
+  r.lang = state.lang === 'auto' ? (navigator.language || 'en-IN') : state.lang;
+  r.interimResults = false; r.maxAlternatives = 1;
+  return r;
+}
+function registerVoiceUse(){
+  if(state.isPremium) return true;
+  if(voiceLocked()){
+    openPaywall(`Your ${FREE_LIMIT} free voice commands are used. Resets in ${fmtCooldown(msLeft(state.voiceCooldownUntil))}.`);
+    return false;
+  }
+  state.voiceUsed++;
+  if(state.voiceUsed >= FREE_LIMIT) state.voiceCooldownUntil = Date.now() + COOLDOWN_MS;
+  renderUsage();
+  return true;
+}
+function toggleChatMic(){ startMic('chat'); }
+function toggleVoiceMic(){ startMic('voice'); }
+function startMic(target){
+  if(recognizing){ recognition && recognition.stop(); return; }
+  if(!state.voiceEnabled){ toast('Voice is turned off in Settings.'); return; }
+  if(!registerVoiceUse()) return;
+  recognition = getRecognition();
+  if(!recognition){ toast('Speech recognition is not supported in this browser.'); return; }
+  recognizingTarget = target;
+  recognizing = true;
+  updateMicUI(true);
+  if(target==='voice'){ document.getElementById('voiceStatus').textContent = 'Listening...'; document.getElementById('bigOrb').classList.add('listening'); }
+  recognition.onresult = (e) => {
+    const said = e.results[0][0].transcript;
+    if(target==='chat'){
+      document.getElementById('chatInput').value = said;
+      sendChat();
+    } else {
+      const t = document.getElementById('voiceTranscript');
+      t.style.display='block';
+      t.innerHTML += `<div style="margin-bottom:8px;"><b>You:</b> ${escapeHtml(said)}</div>`;
+      document.getElementById('voiceStatus').textContent = 'Sky is thinking...';
+      const apiHistory = [{role:'user', content:said}];
+      callSky(said, apiHistory).then(reply=>{
+        t.innerHTML += `<div style="margin-bottom:8px;"><b>Sky:</b> ${escapeHtml(reply)}</div>`;
+        t.scrollTop = t.scrollHeight;
+        document.getElementById('voiceStatus').textContent = 'Tap the mic and talk to Sky.';
+        if(state.autoSpeak) speak(reply);
+      });
+    }
+  };
+  recognition.onerror = () => { toast('Voice not recognized, or mic permission blocked.'); };
+  recognition.onend = () => { recognizing = false; updateMicUI(false); document.getElementById('bigOrb').classList.remove('listening'); };
+  recognition.start();
+}
+function updateMicUI(on){
+  document.getElementById('chatMicBtn').classList.toggle('listening', on);
+  document.getElementById('voiceMicBtn').classList.toggle('listening', on);
+}
+function detectSpeechLang(text){
+  // Used for spoken replies. It detects common Indian scripts and keeps English/Hinglish in en-IN.
+  if(/[\u0A80-\u0AFF]/.test(text)) return 'gu-IN'; // Gujarati
+  if(/[\u0900-\u097F]/.test(text)) return 'hi-IN'; // Hindi/Marathi and other Devanagari
+  if(/[\u0980-\u09FF]/.test(text)) return 'bn-IN';
+  if(/[\u0B80-\u0BFF]/.test(text)) return 'ta-IN';
+  if(/[\u0C00-\u0C7F]/.test(text)) return 'te-IN';
+  if(/[\u0C80-\u0CFF]/.test(text)) return 'kn-IN';
+  return 'en-IN';
+}
+function speak(text){
+  if(!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = state.lang === 'auto' ? detectSpeechLang(text) : state.lang;
+  const voices = window.speechSynthesis.getVoices();
+  let v = state.voiceURI ? voices.find(x=>x.voiceURI===state.voiceURI) : null;
+  if(!v) v = voices.find(x=>x.lang && x.lang.toLowerCase().startsWith(u.lang.slice(0,2).toLowerCase()));
+  if(v) u.voice = v;
+  u.rate = 0.98;
+  u.pitch = 1;
+  u.onstart = () => document.getElementById('bigOrb').classList.add('speaking');
+  u.onend = () => document.getElementById('bigOrb').classList.remove('speaking');
+  window.speechSynthesis.speak(u);
+}
+function setLanguage(value){
+  state.lang = value;
+  localStorage.setItem('skydot_lang', value);
+  toast(value==='auto' ? 'Auto language enabled.' : `Voice language: ${document.querySelector('#langSelect option:checked')?.textContent || value}`);
+}
+function stopSpeaking(){ window.speechSynthesis && window.speechSynthesis.cancel(); document.getElementById('bigOrb').classList.remove('speaking'); }
+function populateVoices(){
+  const fill = () => {
+    const voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+    const sel = document.getElementById('voiceSelect');
+    sel.innerHTML = voices.length ? voices.map(v=>`<option value="${v.voiceURI}">${v.name} (${v.lang})</option>`).join('') : '<option>Default</option>';
+  };
+  fill();
+  if(window.speechSynthesis) window.speechSynthesis.onvoiceschanged = fill;
+}
+
+/* ---------------- STUDIO ACTIONS ---------------- */
+const STUDIO_META = {
+  summary:{title:'Summary', desc:'Paste text or notes — Sky will produce a clear summary.', prompt:'Summarize the following content clearly and concisely:'},
+  questions:{title:'Important Questions', desc:'Sky will generate exam-style important questions.', prompt:'Generate the most important exam-style questions (with mark weightage where relevant) from this content:'},
+  quiz:{title:'MCQ Quiz', desc:'Sky will build a multiple-choice quiz from your content or topic.', prompt:'Create a multiple-choice quiz (with answers marked) from this content or topic:'},
+  notes:{title:'Study Notes', desc:'Combine content into clean, structured study notes.', prompt:'Turn this content into clean, well-structured study notes with headings:'},
+  doc:{title:'Structured Document', desc:'Turn rough text into an organized document.', prompt:'Turn this rough text into a well-structured, formatted document:'},
+  slides:{title:'Presentation Outline', desc:'Draft a slide-by-slide outline.', prompt:'Create a slide-by-slide presentation outline (title + bullets per slide) from this:'},
+  code:{title:'Code Helper', desc:'Explain, debug or improve a piece of code.', prompt:'Explain what this code does, point out any bugs, and suggest improvements:'},
+  tags:{title:'Auto Tags', desc:'Generate tags/categories for this content.', prompt:'Suggest 5-8 short tags/categories for this content:'},
+};
+let currentStudioAction = null;
+function openStudioAction(key){
+  currentStudioAction = key;
+  const meta = STUDIO_META[key];
+  document.getElementById('studioTitle').textContent = meta.title;
+  document.getElementById('studioDesc').textContent = meta.desc;
+  document.getElementById('studioInput').value='';
+  document.getElementById('studioResult').style.display='none';
+  document.getElementById('studioResult').textContent='';
+  document.getElementById('studioModal').classList.add('on');
+}
+async function runStudioAction(){
+  const meta = STUDIO_META[currentStudioAction];
+  const input = document.getElementById('studioInput').value.trim();
+  if(!input){ toast('Add some text first.'); return; }
+  const btn = document.getElementById('studioRunBtn');
+  btn.textContent = 'Generating...'; btn.disabled = true;
+  const reply = await callSky(input, [{role:'user', content: meta.prompt + '\n\n' + input}]);
+  btn.textContent = 'Generate'; btn.disabled = false;
+  const resultBox = document.getElementById('studioResult');
+  resultBox.style.display='block';
+  resultBox.textContent = reply;
+  const sp = state.spaces.find(s=>s.id===state.activeSpace);
+  sp.chat.push({type:currentStudioAction, output:reply});
+  addHistory(`${meta.title} generated and saved to ${sp.name}`);
+  renderSpaces();
+}
+
+/* ---------------- SETTINGS ---------------- */
+function updateName(v){
+  state.name = v || state.name;
+  localStorage.setItem('skydot_demo_name', state.name);
+  document.getElementById('avatarChip').textContent = state.name.charAt(0).toUpperCase();
+  document.getElementById('homeGreeting').textContent = `${new Date().getHours()<12?'Good morning':new Date().getHours()<17?'Good afternoon':'Good evening'}, ${state.name} 👋`;
+}
+function toggleSetting(key){
+  state[key] = !state[key];
+  document.getElementById({voiceEnabled:'voiceEnabledToggle', autoSpeak:'autoSpeakToggle', notif:'notifToggle', storeVoice:'storeVoiceToggle'}[key]).classList.toggle('on', state[key]);
+}
+function logout(){
+  if(confirm('Log out of Skydot?')){
+    localStorage.removeItem('skydot_demo_session');
+    localStorage.removeItem('skydot_demo_name');
+    localStorage.removeItem('skydot_demo_email');
+    location.reload();
+  }
+}
+function deleteAccount(){
+  if(confirm('This will permanently delete your account and all files in this session. Continue?')){
+    toast('Account deleted (session reset).');
+    setTimeout(()=>location.reload(), 900);
+  }
+}
+
+/* ---------------- MISC ---------------- */
+function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function toast(msg){
+  const t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bg-elev-2);border:1px solid var(--border);color:var(--text);padding:12px 20px;border-radius:24px;font-size:.84rem;z-index:200;box-shadow:0 8px 30px rgba(0,0,0,.4);';
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 2600);
+}
+
+/* ---------------- BACKGROUND CONSTELLATION ---------------- */
+function drawSky(){
+  const c = document.getElementById('skyField');
+  const ctx = c.getContext('2d');
+  function resize(){ c.width = innerWidth; c.height = innerHeight; }
+  resize(); window.addEventListener('resize', resize);
+  const N = Math.min(70, Math.floor(innerWidth/22));
+  const pts = Array.from({length:N}, ()=>({
+    x: Math.random()*innerWidth, y: Math.random()*innerHeight,
+    vx: (Math.random()-0.5)*0.15, vy: (Math.random()-0.5)*0.15
+  }));
+  function frame(){
+    ctx.clearRect(0,0,c.width,c.height);
+    const isLight = document.documentElement.getAttribute('data-theme')==='light';
+    ctx.fillStyle = isLight ? 'rgba(60,70,140,0.35)' : 'rgba(180,200,255,0.55)';
+    ctx.strokeStyle = isLight ? 'rgba(60,70,140,0.12)' : 'rgba(140,160,255,0.14)';
+    for(const p of pts){
+      p.x += p.vx; p.y += p.vy;
+      if(p.x<0||p.x>innerWidth) p.vx*=-1;
+      if(p.y<0||p.y>innerHeight) p.vy*=-1;
+      ctx.beginPath(); ctx.arc(p.x,p.y,1.4,0,7); ctx.fill();
+    }
+    for(let i=0;i<pts.length;i++){
+      for(let j=i+1;j<pts.length;j++){
+        const dx=pts[i].x-pts[j].x, dy=pts[i].y-pts[j].y, d=Math.hypot(dx,dy);
+        if(d<120){ ctx.globalAlpha = 1-d/120; ctx.beginPath(); ctx.moveTo(pts[i].x,pts[i].y); ctx.lineTo(pts[j].x,pts[j].y); ctx.stroke(); ctx.globalAlpha=1; }
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+  frame();
+}
+</script>
+</body>
+</html>
