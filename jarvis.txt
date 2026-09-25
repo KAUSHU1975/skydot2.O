@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>J.A.R.V.I.S. — Skydot Voice Control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#04070a;
+    --bg-elev:#0a1016;
+    --panel:rgba(77,217,236,0.05);
+    --panel-strong:rgba(77,217,236,0.1);
+    --border:rgba(77,217,236,0.28);
+    --border-soft:rgba(77,217,236,0.14);
+    --cyan:#4dd9ec;
+    --cyan-soft:#9ff1ff;
+    --amber:#ff9f43;
+    --red:#ff5c5c;
+    --text:#eaf7fb;
+    --muted:#7f9aa3;
+    --font-display:'Orbitron', sans-serif;
+    --font-body:'Rajdhani', sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    background:radial-gradient(ellipse at 50% 0%, #0c1a20 0%, var(--bg) 70%);
+    color:var(--text); font-family:var(--font-body); overflow:hidden; -webkit-font-smoothing:antialiased;
+    font-size:16px;
+  }
+  .screen{position:fixed; inset:0; display:none; align-items:center; justify-content:center; flex-direction:column;}
+  .screen.on{display:flex;}
+
+  canvas#bg{position:fixed; inset:0; z-index:0; opacity:.5;}
+
+  /* ---------------- LOGIN ---------------- */
+  #loginScreen{z-index:20;}
+  .login-card{
+    position:relative; z-index:1; width:min(380px,90vw); background:var(--panel-strong);
+    border:1px solid var(--border); border-radius:6px; padding:34px 30px; backdrop-filter:blur(14px);
+    box-shadow:0 0 60px rgba(77,217,236,.08);
+  }
+  .login-brand{text-align:center; margin-bottom:22px;}
+  .login-brand .ring{width:56px; height:56px; margin:0 auto 12px; border-radius:50%; border:2px solid var(--cyan);
+    display:flex; align-items:center; justify-content:center; position:relative; box-shadow:0 0 22px rgba(77,217,236,.5);}
+  .login-brand .ring::before{content:''; position:absolute; inset:-8px; border:1px solid var(--border); border-radius:50%; animation:spin 8s linear infinite;}
+  .login-brand .ring .dot{width:12px; height:12px; border-radius:50%; background:var(--cyan); box-shadow:0 0 10px var(--cyan);}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .login-brand h1{font-family:var(--font-display); letter-spacing:.12em; font-size:1.1rem; color:var(--cyan);}
+  .login-brand p{font-size:.78rem; color:var(--muted); margin-top:4px; letter-spacing:.03em;}
+  .tabs{display:flex; margin-bottom:18px; border:1px solid var(--border-soft); border-radius:5px; overflow:hidden;}
+  .tab{flex:1; text-align:center; padding:9px; font-size:.82rem; letter-spacing:.05em; color:var(--muted); cursor:pointer; background:none; border:none; font-family:var(--font-body); font-weight:600;}
+  .tab.active{background:var(--panel-strong); color:var(--cyan);}
+  .field{margin-bottom:13px;}
+  .field label{display:block; font-size:.72rem; letter-spacing:.08em; color:var(--muted); margin-bottom:5px; text-transform:uppercase;}
+  .field input{
+    width:100%; padding:11px 13px; background:rgba(0,0,0,.3); border:1px solid var(--border-soft); border-radius:4px;
+    color:var(--text); font-size:.95rem; font-family:var(--font-body); outline:none;
+  }
+  .field input:focus{border-color:var(--cyan);}
+  .btn-jarvis{
+    width:100%; padding:12px; margin-top:6px; background:linear-gradient(90deg,var(--cyan),#2fb8cf); border:none;
+    border-radius:4px; color:#02141a; font-weight:700; letter-spacing:.06em; cursor:pointer; font-family:var(--font-body);
+    font-size:.92rem; text-transform:uppercase; transition:.15s;
+  }
+  .btn-jarvis:hover{box-shadow:0 0 22px rgba(77,217,236,.4); transform:translateY(-1px);}
+  .login-note{font-size:.7rem; color:var(--muted); text-align:center; margin-top:14px; line-height:1.5;}
+  .login-error{font-size:.76rem; color:var(--red); text-align:center; min-height:16px; margin-top:4px;}
+
+  /* ---------------- BOOT ---------------- */
+  #bootScreen{z-index:30; text-align:center;}
+  .boot-orb{width:90px; height:90px; border-radius:50%; position:relative; margin-bottom:26px;}
+  .boot-orb .arc{position:absolute; inset:0; border-radius:50%; border:2px solid transparent;}
+  .boot-orb .arc1{border-top-color:var(--cyan); border-right-color:var(--cyan); animation:spin 1.4s linear infinite;}
+  .boot-orb .arc2{inset:12px; border-bottom-color:var(--amber); animation:spin 1.9s linear infinite reverse;}
+  .boot-orb .core{position:absolute; inset:30px; border-radius:50%; background:radial-gradient(circle,#dffcff,var(--cyan)); box-shadow:0 0 30px var(--cyan);}
+  .boot-title{font-family:var(--font-display); letter-spacing:.2em; font-size:1.5rem; color:var(--cyan); margin-bottom:8px;}
+  .boot-sub{font-size:.85rem; color:var(--muted); letter-spacing:.04em;}
+  .boot-log{margin-top:22px; font-size:.72rem; color:var(--muted); font-family:monospace; min-height:18px; letter-spacing:.03em;}
+
+  /* ---------------- MAIN ---------------- */
+  #mainScreen{z-index:10; flex-direction:column; align-items:stretch; justify-content:flex-start;}
+  .topbar{
+    display:flex; align-items:center; gap:14px; padding:14px 22px; border-bottom:1px solid var(--border-soft);
+    background:rgba(10,16,22,.7); position:relative; z-index:2;
+  }
+  .topbar .ring{width:30px; height:30px; border-radius:50%; border:2px solid var(--cyan); display:flex; align-items:center; justify-content:center; box-shadow:0 0 12px rgba(77,217,236,.4);}
+  .topbar .ring .dot{width:7px; height:7px; border-radius:50%; background:var(--cyan);}
+  .topbar-title{font-family:var(--font-display); letter-spacing:.15em; font-size:.95rem; color:var(--cyan);}
+  .link-status{font-size:.68rem; color:var(--muted); letter-spacing:.05em; display:flex; align-items:center; gap:6px;}
+  .link-status .pulse{width:7px; height:7px; border-radius:50%; background:#3ddc84; box-shadow:0 0 8px #3ddc84; animation:pulseDot 1.6s infinite;}
+  @keyframes pulseDot{0%,100%{opacity:1;}50%{opacity:.3;}}
+  .topbar-right{margin-left:auto; display:flex; align-items:center; gap:14px; font-size:.8rem; color:var(--muted);}
+  .logout-btn{background:none; border:1px solid var(--border-soft); color:var(--muted); padding:6px 12px; border-radius:4px; font-size:.72rem; cursor:pointer; letter-spacing:.05em;}
+  .logout-btn:hover{border-color:var(--red); color:var(--red);}
+
+  .body-grid{flex:1; display:grid; grid-template-columns:1fr 260px; min-height:0; position:relative; z-index:1;}
+  @media(max-width:820px){.body-grid{grid-template-columns:1fr;}}
+
+  .center-col{display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; min-height:0;}
+  .jarvis-orb{width:170px; height:170px; border-radius:50%; position:relative; margin-bottom:22px; cursor:pointer; flex-shrink:0;}
+  .jarvis-orb .ring{position:absolute; border-radius:50%; border:1.5px solid var(--border);}
+  .jarvis-orb .r1{inset:0; border-color:rgba(77,217,236,.5); animation:spin 10s linear infinite;}
+  .jarvis-orb .r2{inset:14px; border-color:rgba(255,159,67,.4); animation:spin 7s linear infinite reverse;}
+  .jarvis-orb .r3{inset:28px; border-color:rgba(77,217,236,.3); animation:spin 5s linear infinite;}
+  .jarvis-orb .core{position:absolute; inset:52px; border-radius:50%; background:radial-gradient(circle at 35% 30%,#eafeff,var(--cyan) 55%,#0f5c68); box-shadow:0 0 40px 6px rgba(77,217,236,.45);}
+  .jarvis-orb.listening .core{animation:corePulse 1s ease-in-out infinite; box-shadow:0 0 60px 14px rgba(255,92,92,.4);}
+  .jarvis-orb.listening .r1,.jarvis-orb.listening .r2,.jarvis-orb.listening .r3{border-color:rgba(255,92,92,.5);}
+  .jarvis-orb.speaking .core{animation:coreSpeak .5s ease-in-out infinite;}
+  @keyframes corePulse{0%,100%{transform:scale(1);}50%{transform:scale(1.13);}}
+  @keyframes coreSpeak{0%,100%{transform:scale(1);}50%{transform:scale(1.06);}}
+  .jarvis-status{font-family:var(--font-display); font-size:.85rem; letter-spacing:.08em; color:var(--cyan); margin-bottom:6px; min-height:20px; text-align:center;}
+  .jarvis-hint{font-size:.78rem; color:var(--muted); margin-bottom:20px; text-align:center;}
+
+  .transcript{
+    width:min(560px,92%); max-height:34vh; overflow-y:auto; margin-bottom:16px; padding-right:4px;
+  }
+  .line{margin-bottom:10px; font-size:.9rem; line-height:1.45;}
+  .line .who{font-family:var(--font-display); font-size:.66rem; letter-spacing:.1em; margin-right:8px;}
+  .line.user .who{color:var(--amber);}
+  .line.jarvis .who{color:var(--cyan);}
+  .line span.txt{color:var(--text);}
+
+  .input-row{width:min(560px,92%); display:flex; gap:10px; align-items:center;}
+  .input-row input{
+    flex:1; padding:12px 15px; background:rgba(0,0,0,.35); border:1px solid var(--border-soft); border-radius:5px;
+    color:var(--text); font-size:.92rem; font-family:var(--font-body); outline:none;
+  }
+  .input-row input:focus{border-color:var(--cyan);}
+  .circle-btn{width:42px; height:42px; border-radius:50%; border:1px solid var(--border-soft); background:var(--panel); color:var(--cyan); cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .circle-btn.mic.on{background:var(--red); border-color:var(--red); color:#fff; animation:corePulse 1s infinite;}
+  .circle-btn.send{background:linear-gradient(90deg,var(--cyan),#2fb8cf); color:#02141a; border:none;}
+
+  .quick-cmds{display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:18px; width:min(560px,92%);}
+  .cmd-chip{padding:7px 13px; border:1px solid var(--border-soft); border-radius:16px; font-size:.74rem; color:var(--muted); cursor:pointer; letter-spacing:.02em;}
+  .cmd-chip:hover{border-color:var(--cyan); color:var(--cyan);}
+
+  /* ---------------- SKYDOT DOCK PANEL ---------------- */
+  .dock{border-left:1px solid var(--border-soft); padding:20px 16px; overflow-y:auto; background:rgba(6,10,14,.5);}
+  .dock h4{font-family:var(--font-display); font-size:.68rem; letter-spacing:.12em; color:var(--muted); margin-bottom:14px;}
+  .dock-item{
+    display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:5px; font-size:.82rem; color:var(--muted);
+    margin-bottom:6px; border:1px solid transparent;
+  }
+  .dock-item.active{border-color:var(--border); background:var(--panel-strong); color:var(--cyan);}
+  .dock-item .bullet{width:6px; height:6px; border-radius:50%; background:currentColor; flex-shrink:0;}
+  .dock-panel-body{margin-top:16px; padding:14px; border:1px solid var(--border-soft); border-radius:6px; background:var(--panel); min-height:120px; font-size:.78rem; color:var(--muted); line-height:1.5;}
+  .dock-panel-body b{color:var(--text);}
+
+  ::-webkit-scrollbar{width:5px;}
+  ::-webkit-scrollbar-thumb{background:var(--border); border-radius:4px;}
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+
+<!-- LOGIN -->
+<div class="screen on" id="loginScreen">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="ring"><div class="dot"></div></div>
+      <h1>SKYDOT ACCESS</h1>
+      <p>Authenticate to activate J.A.R.V.I.S.</p>
+    </div>
+    <div class="tabs">
+      <button class="tab active" id="tabSignin" onclick="setAuthTab('signin')">Sign In</button>
+      <button class="tab" id="tabSignup" onclick="setAuthTab('signup')">Create Account</button>
+    </div>
+    <div class="field"><label>Name</label><input id="authName" placeholder="Your name"></div>
+    <div class="field"><label>Email</label><input id="authEmail" type="email" placeholder="you@example.com"></div>
+    <div class="field"><label>Password</label><input id="authPassword" type="password" placeholder="••••••••"></div>
+    <div class="login-error" id="authError"></div>
+    <button class="btn-jarvis" id="authSubmitBtn" onclick="submitAuth()">Sign In</button>
+    <div class="login-note">Demo login — accounts are kept in this browser tab's memory only, to demonstrate the Skydot → J.A.R.V.I.S. handoff. A production build must verify this on a real backend.</div>
+  </div>
+</div>
+
+<!-- BOOT -->
+<div class="screen" id="bootScreen">
+  <div class="boot-orb"><div class="arc arc1"></div><div class="arc arc2"></div><div class="core"></div></div>
+  <div class="boot-title">J.A.R.V.I.S.</div>
+  <div class="boot-sub">Just A Rather Very Intelligent System</div>
+  <div class="boot-log" id="bootLog">Initializing core systems...</div>
+</div>
+
+<!-- MAIN -->
+<div class="screen" id="mainScreen">
+  <div class="topbar">
+    <div class="ring"><div class="dot"></div></div>
+    <div class="topbar-title">J.A.R.V.I.S.</div>
+    <div class="link-status"><div class="pulse"></div> SKYDOT LINK: ONLINE</div>
+    <div class="topbar-right">
+      <span id="userChip">User</span>
+      <button class="logout-btn" onclick="logout()">Log out</button>
+    </div>
+  </div>
+
+  <div class="body-grid">
+    <div class="center-col">
+      <div class="jarvis-orb" id="orb" onclick="toggleMic()">
+        <div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div><div class="core"></div>
+      </div>
+      <div class="jarvis-status" id="jarvisStatus">Standing by, sir.</div>
+      <div class="jarvis-hint">Tap the core or type below — J.A.R.V.I.S. can chat, answer questions, or control Skydot for you.</div>
+
+      <div class="transcript" id="transcript"></div>
+
+      <div class="input-row">
+        <input id="textInput" placeholder="Type a command or a question..." onkeydown="if(event.key==='Enter')handleUserText(this.value), this.value=''">
+        <button class="circle-btn mic" id="micBtn" onclick="toggleMic()">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v1a7 7 0 0014 0v-1M12 18v4"/></svg>
+        </button>
+        <button class="circle-btn send" onclick="const i=document.getElementById('textInput'); handleUserText(i.value); i.value='';">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+
+      <div class="quick-cmds">
+        <div class="cmd-chip" onclick="handleUserText('Open my files')">Open Files</div>
+        <div class="cmd-chip" onclick="handleUserText('Open spaces')">Open Spaces</div>
+        <div class="cmd-chip" onclick="handleUserText('Create a quiz')">Create Quiz</div>
+        <div class="cmd-chip" onclick="handleUserText('Summarize my last file')">Summarize</div>
+        <div class="cmd-chip" onclick="handleUserText('Go home')">Home</div>
+        <div class="cmd-chip" onclick="stopSpeaking()">Stop Talking</div>
+      </div>
+    </div>
+
+    <div class="dock">
+      <h4>SKYDOT — LIVE PANEL</h4>
+      <div class="dock-item active" data-sec="home"><div class="bullet"></div>Home</div>
+      <div class="dock-item" data-sec="chat"><div class="bullet"></div>AI Chat</div>
+      <div class="dock-item" data-sec="files"><div class="bullet"></div>My Files</div>
+      <div class="dock-item" data-sec="spaces"><div class="bullet"></div>Spaces</div>
+      <div class="dock-item" data-sec="studio"><div class="bullet"></div>AI Studio</div>
+      <div class="dock-panel-body" id="dockBody"><b>Home.</b> Say a command like "open files" or "create a quiz" and J.A.R.V.I.S. will switch this panel and act on your Skydot workspace.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   J.A.R.V.I.S. — Skydot voice-control layer (prototype)
+   ---------------------------------------------------------
+   Flow: user logs into Skydot -> JARVIS boots -> greets user
+   by name -> listens/types -> answers questions AND routes
+   recognised commands to a mock Skydot control panel.
+
+   NOTE: login here is a client-side demo (accounts live only
+   in this tab's memory) so the full experience can be shown
+   end-to-end. A real product needs a real backend for auth,
+   and the "Skydot panel" here is a stand-in for the actual
+   Skydot app it would control via a shared API.
+   ========================================================= */
+
+const users = []; // {name, email, password} — in-memory only
+let currentUser = null;
+let authMode = 'signin';
+
+/* ---------------- AUTH ---------------- */
+function setAuthTab(mode){
+  authMode = mode;
+  document.getElementById('tabSignin').classList.toggle('active', mode==='signin');
+  document.getElementById('tabSignup').classList.toggle('active', mode==='signup');
+  document.getElementById('authSubmitBtn').textContent = mode==='signin' ? 'Sign In' : 'Create Account';
+  document.getElementById('authError').textContent = '';
+}
+function submitAuth(){
+  const name = document.getElementById('authName').value.trim();
+  const email = document.getElementById('authEmail').value.trim().toLowerCase();
+  const password = document.getElementById('authPassword').value;
+  const errEl = document.getElementById('authError');
+  errEl.textContent = '';
+
+  if(!email || !password){ errEl.textContent = 'Email and password are required.'; return; }
+
+  if(authMode === 'signup'){
+    if(!name){ errEl.textContent = 'Please enter your name.'; return; }
+    if(users.find(u=>u.email===email)){ errEl.textContent = 'Account already exists — try Sign In.'; return; }
+    users.push({name, email, password});
+    currentUser = {name, email};
+  } else {
+    const u = users.find(u=>u.email===email && u.password===password);
+    if(!u){ errEl.textContent = 'No matching account. Try Create Account.'; return; }
+    currentUser = {name: u.name, email: u.email};
+  }
+  document.getElementById('loginScreen').classList.remove('on');
+  runBoot();
+}
+function logout(){
+  currentUser = null;
+  document.getElementById('mainScreen').classList.remove('on');
+  document.getElementById('authName').value='';
+  document.getElementById('authEmail').value='';
+  document.getElementById('authPassword').value='';
+  document.getElementById('loginScreen').classList.add('on');
+  window.speechSynthesis && window.speechSynthesis.cancel();
+}
+
+/* ---------------- BOOT SEQUENCE ---------------- */
+const BOOT_LINES = [
+  'Initializing core systems...',
+  'Linking to Skydot workspace...',
+  'Calibrating voice interface...',
+  'Loading user profile...',
+  'All systems online.'
+];
+function runBoot(){
+  document.getElementById('bootScreen').classList.add('on');
+  const log = document.getElementById('bootLog');
+  let i = 0;
+  const iv = setInterval(()=>{
+    log.textContent = BOOT_LINES[i];
+    i++;
+    if(i >= BOOT_LINES.length){
+      clearInterval(iv);
+      setTimeout(()=>{
+        document.getElementById('bootScreen').classList.remove('on');
+        startMain();
+      }, 500);
+    }
+  }, 420);
+}
+
+/* ---------------- MAIN SCREEN ---------------- */
+function startMain(){
+  document.getElementById('mainScreen').classList.add('on');
+  document.getElementById('userChip').textContent = currentUser.name;
+  populateVoicesQuiet();
+  const hour = new Date().getHours();
+  const part = hour<12?'morning':hour<17?'afternoon':'evening';
+  const greeting = `Good ${part}, ${currentUser.name}. Skydot is linked and I'm online. What would you like to do?`;
+  addLine('jarvis', greeting);
+  speak(greeting);
+}
+
+/* ---------------- TRANSCRIPT ---------------- */
+function addLine(who, text){
+  const t = document.getElementById('transcript');
+  const div = document.createElement('div');
+  div.className = 'line ' + who;
+  div.innerHTML = `<span class="who">${who==='jarvis'?'JARVIS':currentUser.name.toUpperCase()}</span><span class="txt"></span>`;
+  div.querySelector('.txt').textContent = text;
+  t.appendChild(div);
+  t.scrollTop = t.scrollHeight;
+}
+
+/* ---------------- SKYDOT MOCK PANEL ---------------- */
+const SECTIONS = {
+  home:{label:'Home', body:'<b>Home.</b> Say a command like "open files" or "create a quiz" and J.A.R.V.I.S. will switch this panel and act on your Skydot workspace.'},
+  chat:{label:'AI Chat', body:'<b>AI Chat opened.</b> Anything you say now is also treated as a normal Skydot conversation.'},
+  files:{label:'My Files', body:'<b>My Files opened.</b> In the full app this shows your uploads, with the free-plan limit of 4 uploads before an 8-hour cooldown.'},
+  spaces:{label:'Spaces', body:'<b>Spaces opened.</b> College, Coding, Business and Personal spaces would list here, each with its own files and chat history.'},
+  studio:{label:'AI Studio', body:'<b>AI Studio opened.</b> Summary, Important Questions, MCQ Quiz, Study Notes and other AI Actions live here.'},
+};
+function setSection(sec){
+  document.querySelectorAll('.dock-item').forEach(d=>d.classList.toggle('active', d.dataset.sec===sec));
+  document.getElementById('dockBody').innerHTML = SECTIONS[sec].body;
+}
+document.querySelectorAll('.dock-item').forEach(el=>el.addEventListener('click', ()=>setSection(el.dataset.sec)));
+
+/* ---------------- COMMAND ROUTER ---------------- */
+function routeCommand(text){
+  const t = text.toLowerCase();
+  if(/\b(file|upload|cloud)\b/.test(t) && /(open|show|go to)/.test(t)){ setSection('files'); return `Opening My Files, ${currentUser.name}.`; }
+  if(/\bspace/.test(t) && /(open|show|go to)/.test(t)){ setSection('spaces'); return `Opening Spaces now.`; }
+  if(/\b(chat|talk)\b/.test(t) && /(open|show|go to)/.test(t)){ setSection('chat'); return `Opening AI Chat.`; }
+  if(/(quiz|studio|summary|summarize|questions|notes)\b/.test(t)){ setSection('studio'); return `Opening AI Studio — I can generate that once you point me to a file or some text.`; }
+  if(/\b(home|dashboard)\b/.test(t) && /(open|show|go to)/.test(t)){ setSection('home'); return `Back to Home.`; }
+  return null;
+}
+
+/* ---------------- AI CALL (works inside Claude.ai's artifact preview) ---------------- */
+async function askJarvis(userText){
+  try{
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 500,
+        system: `You are J.A.R.V.I.S., a calm, witty, highly capable AI voice assistant, in the voice-control layer of an app called Skydot. The current user is named ${currentUser.name}. Address them naturally and occasionally use "sir" or their name, Jarvis-style. Keep answers conversational and not too long, since they may be read aloud.`,
+        messages: [{role:'user', content:userText}]
+      })
+    });
+    if(!response.ok) throw new Error('API error '+response.status);
+    const data = await response.json();
+    return (data.content||[]).map(b=>b.type==='text'?b.text:'').join('\n').trim() || "I don't have a response for that, sir.";
+  }catch(err){
+    console.error(err);
+    return "I can't reach my reasoning core right now. Outside Claude.ai's preview, J.A.R.V.I.S. needs its own backend and API key wired in to answer questions.";
+  }
+}
+
+/* ---------------- MESSAGE HANDLING ---------------- */
+async function handleUserText(raw){
+  const text = (raw||'').trim();
+  if(!text) return;
+  addLine('user', text);
+
+  const commandReply = routeCommand(text);
+  if(commandReply){
+    addLine('jarvis', commandReply);
+    speak(commandReply);
+    return;
+  }
+
+  setStatus('Thinking...');
+  const reply = await askJarvis(text);
+  setStatus('Standing by, sir.');
+  addLine('jarvis', reply);
+  speak(reply);
+}
+function setStatus(s){ document.getElementById('jarvisStatus').textContent = s; }
+
+/* ---------------- VOICE: recognition + synthesis ---------------- */
+let recognition = null;
+let listening = false;
+function getRecognition(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR) return null;
+  const r = new SR();
+  r.lang = 'en-IN'; r.interimResults = false; r.maxAlternatives = 1;
+  return r;
+}
+function toggleMic(){
+  if(listening){ recognition && recognition.stop(); return; }
+  recognition = getRecognition();
+  if(!recognition){ setStatus('Speech recognition not supported in this browser.'); return; }
+  listening = true;
+  document.getElementById('orb').classList.add('listening');
+  document.getElementById('micBtn').classList.add('on');
+  setStatus('Listening...');
+  recognition.onresult = (e) => {
+    const said = e.results[0][0].transcript;
+    handleUserText(said);
+  };
+  recognition.onerror = () => { setStatus('Did not catch that, sir.'); };
+  recognition.onend = () => {
+    listening = false;
+    document.getElementById('orb').classList.remove('listening');
+    document.getElementById('micBtn').classList.remove('on');
+    if(document.getElementById('jarvisStatus').textContent === 'Listening...') setStatus('Standing by, sir.');
+  };
+  recognition.start();
+}
+function speak(text){
+  if(!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  const voices = window.speechSynthesis.getVoices();
+  const preferred = voices.find(v=>/male|david|daniel|google uk english male/i.test(v.name)) || voices[0];
+  if(preferred) u.voice = preferred;
+  u.rate = 1.0; u.pitch = 0.95;
+  u.onstart = () => document.getElementById('orb').classList.add('speaking');
+  u.onend = () => document.getElementById('orb').classList.remove('speaking');
+  window.speechSynthesis.speak(u);
+}
+function stopSpeaking(){ window.speechSynthesis && window.speechSynthesis.cancel(); document.getElementById('orb').classList.remove('speaking'); }
+function populateVoicesQuiet(){
+  if(!window.speechSynthesis) return;
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+}
+
+/* ---------------- BACKGROUND RADAR FIELD ---------------- */
+function drawBg(){
+  const c = document.getElementById('bg');
+  const ctx = c.getContext('2d');
+  function resize(){ c.width = innerWidth; c.height = innerHeight; }
+  resize(); window.addEventListener('resize', resize);
+  const N = Math.min(60, Math.floor(innerWidth/26));
+  const pts = Array.from({length:N}, ()=>({
+    x: Math.random()*innerWidth, y: Math.random()*innerHeight,
+    vx: (Math.random()-0.5)*0.12, vy: (Math.random()-0.5)*0.12
+  }));
+  function frame(){
+    ctx.clearRect(0,0,c.width,c.height);
+    ctx.fillStyle = 'rgba(77,217,236,0.5)';
+    ctx.strokeStyle = 'rgba(77,217,236,0.12)';
+    for(const p of pts){
+      p.x += p.vx; p.y += p.vy;
+      if(p.x<0||p.x>innerWidth) p.vx*=-1;
+      if(p.y<0||p.y>innerHeight) p.vy*=-1;
+      ctx.beginPath(); ctx.arc(p.x,p.y,1.3,0,7); ctx.fill();
+    }
+    for(let i=0;i<pts.length;i++){
+      for(let j=i+1;j<pts.length;j++){
+        const dx=pts[i].x-pts[j].x, dy=pts[i].y-pts[j].y, d=Math.hypot(dx,dy);
+        if(d<110){ ctx.globalAlpha = 1-d/110; ctx.beginPath(); ctx.moveTo(pts[i].x,pts[i].y); ctx.lineTo(pts[j].x,pts[j].y); ctx.stroke(); ctx.globalAlpha=1; }
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+  frame();
+}
+drawBg();
+</script>
+</body>
+</html>
